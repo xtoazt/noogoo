@@ -28,22 +28,22 @@ RUN git clone --depth 1 https://github.com/ai-to-ai/Auto-Gmail-Creator.git || \
     (mkdir -p Auto-Gmail-Creator && echo "Repository cloned manually")
 
 # Create a wrapper script for account generation with better error handling
-RUN cat > /home/user/generate_account.sh << 'EOF' && chmod +x /home/user/generate_account.sh && chown user:user /home/user/generate_account.sh
-#!/bin/bash
-cd /home/user/Auto-Gmail-Creator || exit 1
-
-# Try to find and run the main script
-if [ -f "main.py" ]; then
-    python3 main.py "$@"
-elif [ -f "gmail_creator.py" ]; then
-    python3 gmail_creator.py "$@"
-elif [ -f "create_account.py" ]; then
-    python3 create_account.py "$@"
-else
-    echo '{"error": "Could not find main script", "status": "failed"}' >&2
-    exit 1
-fi
-EOF
+RUN printf '#!/bin/bash\n\
+cd /home/user/Auto-Gmail-Creator || exit 1\n\
+\n\
+# Try to find and run the main script\n\
+if [ -f "main.py" ]; then\n\
+    python3 main.py "$@"\n\
+elif [ -f "gmail_creator.py" ]; then\n\
+    python3 gmail_creator.py "$@"\n\
+elif [ -f "create_account.py" ]; then\n\
+    python3 create_account.py "$@"\n\
+else\n\
+    echo "{\\"error\\": \\"Could not find main script\\", \\"status\\": \\"failed\\"}" >&2\n\
+    exit 1\n\
+fi\n' > /home/user/generate_account.sh && \
+    chmod +x /home/user/generate_account.sh && \
+    chown user:user /home/user/generate_account.sh
 
 # Set up environment
 ENV HOME="/home/user" \
