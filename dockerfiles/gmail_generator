@@ -17,11 +17,18 @@ RUN useradd -m -s /bin/bash user && \
 
 # Install Python dependencies
 # Use --break-system-packages flag for Debian bookworm (PEP 668)
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir --break-system-packages \
+# Create a virtual environment and install packages there
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /opt/venv/bin/pip install --no-cache-dir \
     requests \
     beautifulsoup4 \
-    fake-useragent
+    fake-useragent && \
+    ln -s /opt/venv/bin/pip3 /usr/local/bin/pip3-venv && \
+    ln -s /opt/venv/bin/python3 /usr/local/bin/python3-venv
+
+# Add venv to PATH for user
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Clone Auto-Gmail-Creator
 WORKDIR /home/user/
