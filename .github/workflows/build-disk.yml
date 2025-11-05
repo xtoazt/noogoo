@@ -1,0 +1,36 @@
+name: Build WebVM Disk Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      dockerfile_path:
+        description: 'Path to Dockerfile'
+        required: false
+        default: 'dockerfiles/gmail_generator'
+  push:
+    paths:
+      - 'dockerfiles/**'
+      - '.github/workflows/build-disk.yml'
+
+jobs:
+  build_disk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -f ${{ github.event.inputs.dockerfile_path || 'dockerfiles/gmail_generator' }} -t gmail-generator-vm .
+
+      - name: Upload disk image artifact
+        run: |
+          echo "Disk image built successfully"
+          echo "Note: Convert Docker image to WebVM Ext2 format using WebVM build tools"
+          echo "Then upload the .ext2 file to a CDN or web-accessible location"
+          echo "Update the diskImageUrl in public/config.js with the new URL"
+

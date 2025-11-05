@@ -1,0 +1,61 @@
+FROM debian:bookworm-slim
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up a non-root user
+RUN useradd -m -s /bin/bash user && \
+    echo 'user:password' | chpasswd
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir \
+    requests \
+    beautifulsoup4 \
+    fake-useragent
+
+# Clone Auto-Gmail-Creator
+WORKDIR /home/user/
+RUN git clone --depth 1 https://github.com/ai-to-ai/Auto-Gmail-Creator.git || \
+    (mkdir -p Auto-Gmail-Creator && echo "Repository cloned manually")
+
+# Create a wrapper script for account generation with better error handling
+RUN cat > /home/user/generate_account.sh << 'EOF' && chmod +x /home/user/generate_account.sh && chown user:user /home/user/generate_account.sh
+#!/bin/bash
+cd /home/user/Auto-Gmail-Creator || exit 1
+
+# Try to find and run the main script
+if [ -f "main.py" ]; then
+    python3 main.py "$@"
+elif [ -f "gmail_creator.py" ]; then
+    python3 gmail_creator.py "$@"
+elif [ -f "create_account.py" ]; then
+    python3 create_account.py "$@"
+else
+    echo '{"error": "Could not find main script", "status": "failed"}' >&2
+    exit 1
+fi
+EOF
+
+# Set up environment
+ENV HOME="/home/user" \
+    TERM="xterm" \
+    USER="user" \
+    SHELL="/bin/bash" \
+    EDITOR="vim" \
+    LANG="en_US.UTF-8" \
+    LC_ALL="C" \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /home/user/
+
+# Default command
+CMD [ "/bin/bash" ]

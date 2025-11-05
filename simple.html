@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Gmail Generator - Gmailnator API</title>
+    <link rel="stylesheet" href="src/simple-style.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Simple Gmail Generator</h1>
+            <p>Generate temporary Gmail addresses instantly using Gmailnator API</p>
+            <div style="margin-top: 15px;">
+                <a href="index.html" style="color: white; text-decoration: underline; font-size: 0.9em;">
+                    🔄 Switch to Full Version (WebVM)
+                </a>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="generate-section">
+                <h2>Generate Email</h2>
+                <div class="email-options">
+                    <label>
+                        <input type="checkbox" value="1" checked> Public Domain Mail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="2" checked> Public Plus(+) Gmail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="3" checked> Public Dot(.) Gmail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="4"> Private Domain Mail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="5"> Private Plus(+) Gmail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="6"> Private Dot(.) Gmail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="8"> Public Googlemail
+                    </label>
+                    <label>
+                        <input type="checkbox" value="9"> Private Googlemail
+                    </label>
+                </div>
+                <button id="generateBtn" class="generate-btn">Generate Email</button>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <h2>Generated Account</h2>
+                <div class="account-info">
+                    <div class="info-item">
+                        <label>Email Address:</label>
+                        <div class="email-display" id="emailDisplay">
+                            <span id="emailText"></span>
+                            <button id="copyEmailBtn" class="copy-btn">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label>Status:</label>
+                        <span id="statusText" class="status-badge">Active</span>
+                    </div>
+                </div>
+
+                <div class="inbox-section">
+                    <h3>Inbox Messages</h3>
+                    <button id="refreshInboxBtn" class="refresh-btn">🔄 Refresh Inbox</button>
+                    <div id="inboxMessages" class="messages-list">
+                        <p class="empty-state">No messages yet. Check back soon!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="api-config-section">
+                <h3>API Configuration</h3>
+                <div class="config-item">
+                    <label for="apiKey">RapidAPI Key:</label>
+                    <input type="text" id="apiKey" placeholder="Enter your RapidAPI key" 
+                           value="2c9338405dmsh74ec75e133afe3cp12eefcjsn066ab45de653">
+                    <small>Get your key from <a href="https://rapidapi.com" target="_blank">RapidAPI</a></small>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status">Ready</span>
+            <span id="apiStatus">API: Connected</span>
+        </div>
+    </div>
+
+    <script src="src/simple.js"></script>
+</body>
+</html>

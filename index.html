@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Gmail Account Generator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <link rel="stylesheet" href="src/style.css" />
+    <script src="https://unpkg.com/@cheerpx/webvm@latest/dist/webvm.js" type="module"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Auto Gmail Account Generator</h1>
+            <p>Create Google accounts directly from your browser - Choose your method below</p>
+        </header>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="input-section">
+                    <div class="method-selector">
+                        <label>Generation Method:</label>
+                        <select id="methodSelect">
+                            <option value="webvm">WebVM (Full Account Creation)</option>
+                            <option value="gmailnator">Gmailnator API (Quick & Simple)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="webvmFields">
+                        <label for="firstName">First Name:</label>
+                        <input type="text" id="firstName" placeholder="Enter first name" />
+                        
+                        <label for="lastName">Last Name:</label>
+                        <input type="text" id="lastName" placeholder="Enter last name" />
+                        
+                        <label for="username">Desired Username (optional):</label>
+                        <input type="text" id="username" placeholder="Leave empty for random" />
+                    </div>
+                    
+                    <div id="gmailnatorFields" style="display: none;">
+                        <label for="apiKey">RapidAPI Key:</label>
+                        <input type="text" id="apiKey" placeholder="Enter your RapidAPI key" 
+                               value="2c9338405dmsh74ec75e133afe3cp12eefcjsn066ab45de653" />
+                        
+                        <label for="setPassword">Set Password To:</label>
+                        <input type="text" id="setPassword" placeholder="Enter password to set" 
+                               value="SecurePass123!" />
+                        
+                        <label for="passwordChangeUrl">Password Change URL (optional):</label>
+                        <input type="text" id="passwordChangeUrl" 
+                               placeholder="URL to change password (e.g., https://accounts.google.com/..." />
+                        
+                        <div class="email-options">
+                            <label><input type="checkbox" value="1" checked> Public Domain</label>
+                            <label><input type="checkbox" value="2" checked> Public Plus(+) Gmail</label>
+                            <label><input type="checkbox" value="3" checked> Public Dot(.) Gmail</label>
+                            <label><input type="checkbox" value="4"> Private Domain</label>
+                            <label><input type="checkbox" value="5"> Private Plus(+) Gmail</label>
+                            <label><input type="checkbox" value="6"> Private Dot(.) Gmail</label>
+                        </div>
+                    </div>
+                    
+                    <button id="generateBtn" class="generate-btn">Generate Account</button>
+                    <button id="clearBtn" class="clear-btn">Clear Output</button>
+                </div>
+
+                <div class="output-section">
+                    <h3>Generated Account (JSON)</h3>
+                    <pre id="jsonOutput" class="json-output">No account generated yet...</pre>
+                </div>
+            </div>
+
+            <div class="terminal-section">
+                <h3>Terminal Output</h3>
+                <div id="terminal"></div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status">Ready</span>
+            <span id="vmStatus">VM: Not Initialized</span>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
