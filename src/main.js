@@ -63,12 +63,20 @@ let webvmConfig = {
 // Try to load config from public folder
 async function loadConfig() {
     try {
-        const configModule = await import('/config.js');
-        if (configModule && configModule.webvmConfig) {
-            webvmConfig = configModule.webvmConfig;
+        // Try to load config - it will be in the build output root
+        // Use a dynamic import with a variable to prevent Vite from trying to resolve it at build time
+        // This will only run at runtime, not during build
+        if (typeof window !== 'undefined') {
+            const configPath = new URL('/config.js', window.location.href).href;
+            const configModule = await import(/* @vite-ignore */ configPath);
+            if (configModule && configModule.webvmConfig) {
+                webvmConfig = configModule.webvmConfig;
+            }
         }
     } catch (e) {
-        console.log('Using default config');
+        // Config file not found or not yet generated - use default
+        // This is expected during development and will work after build
+        console.log('Using default config (config.js will be available after build)');
     }
 }
 

@@ -16,8 +16,9 @@ RUN useradd -m -s /bin/bash user && \
     echo 'user:password' | chpasswd
 
 # Install Python dependencies
+# Use --break-system-packages flag for Debian bookworm (PEP 668)
 RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir \
+    pip3 install --no-cache-dir --break-system-packages \
     requests \
     beautifulsoup4 \
     fake-useragent
