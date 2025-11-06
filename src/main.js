@@ -626,34 +626,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Auto-detect lab runner ID from URL
-    function detectLabRunnerId() {
-        const url = window.location.href;
-        // Match /focuses/32138 or /focuses/32138?parent=catalog
-        const match = url.match(/\/focuses\/(\d+)/);
-        if (match) {
-            return match[1];
-        }
-        return null;
-    }
-    
-    // Update detected lab ID display
-    function updateDetectedLabId() {
-        const detectedId = detectLabRunnerId();
-        const detectedDisplay = document.getElementById('detectedLabId');
-        const labRunnerIdInput = document.getElementById('labRunnerId');
-        
-        if (detectedId) {
-            detectedDisplay.textContent = `Lab ID: ${detectedId}`;
-            detectedDisplay.style.color = '#2e7d32';
-            if (!labRunnerIdInput.value) {
-                labRunnerIdInput.value = detectedId;
-            }
-        } else {
-            detectedDisplay.textContent = 'Not detected - enter manually';
-            detectedDisplay.style.color = '#d32f2f';
-        }
-    }
+    // Hardcoded lab configuration
+    const QWIKLABS_LAB_ID = '32138';
+    const QWIKLABS_LAB_PARENT = 'catalog';
     
     // Handle method selection change
     document.getElementById('methodSelect').addEventListener('change', (e) => {
@@ -675,14 +650,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (method === 'qwiklabs') {
             qwiklabsFields.style.display = 'block';
-            updateDetectedLabId(); // Auto-detect lab ID
             if (terminal) {
                 terminal.writeln('\r\nSwitched to Qwiklabs API mode');
+                terminal.writeln(`Using Lab ID: ${QWIKLABS_LAB_ID} (A Tour of Google Cloud Sustainability)`);
                 terminal.writeln('Will call Qwiklabs API to get temporary Google account');
-                const detectedId = detectLabRunnerId();
-                if (detectedId) {
-                    terminal.writeln(`Auto-detected Lab ID: ${detectedId}`);
-                }
             }
         } else {
             webvmFields.style.display = 'block';
@@ -696,12 +667,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Auto-detect on page load if Qwiklabs method is selected
-    setTimeout(() => {
-        if (document.getElementById('methodSelect').value === 'qwiklabs') {
-            updateDetectedLabId();
-        }
-    }, 100);
 
     // Load saved API key
     const savedApiKey = localStorage.getItem('gmailnator_api_key');
@@ -1061,29 +1026,9 @@ async function generateAccountQwiklabs() {
     generateBtn.disabled = true;
     generateBtn.innerHTML = '<span>Generating...</span>';
     
-    // Auto-detect lab runner ID from URL if not provided
-    let labRunnerId = document.getElementById('labRunnerId').value.trim();
-    if (!labRunnerId) {
-        labRunnerId = detectLabRunnerId();
-        if (labRunnerId) {
-            document.getElementById('labRunnerId').value = labRunnerId;
-        }
-    }
-    
-    const labParent = document.getElementById('labParent').value.trim() || 'catalog';
-    
-    // Extract parent from URL if available
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlParent = urlParams.get('parent');
-    const finalParent = urlParent || labParent;
-    
-    if (!labRunnerId) {
-        alert('Please enter a Lab Runner ID (Focus ID) or navigate to a Qwiklabs lab page');
-        isGenerating = false;
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<span>Generate Account</span>';
-        return;
-    }
+    // Use hardcoded lab ID and parent
+    const labRunnerId = QWIKLABS_LAB_ID;
+    const finalParent = QWIKLABS_LAB_PARENT;
 
     try {
         updateStatus('Starting Qwiklabs lab...', 'Qwiklabs: Connecting');
