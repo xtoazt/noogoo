@@ -64,19 +64,16 @@
                     </div>
                     
                     <div id="qwiklabsFields" style="display: none;">
-                        <div id="qwiklabsAutoDetect" style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
-                            <strong>Auto-detected from URL:</strong>
+                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                            <strong>Using Lab:</strong>
                             <div style="margin-top: 8px;">
-                                <span id="detectedLabId" style="font-weight: bold; color: #2e7d32;">Not detected</span>
+                                <div>Lab ID: <span style="font-weight: bold; color: #2e7d32;">32138</span></div>
+                                <div>Parent: <span style="font-weight: bold; color: #2e7d32;">catalog</span></div>
+                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                    A Tour of Google Cloud Sustainability
+                                </div>
                             </div>
                         </div>
-                        
-                        <label for="labRunnerId">Lab Runner ID (Focus ID):</label>
-                        <input type="text" id="labRunnerId" placeholder="Auto-detected from URL or enter manually" />
-                        
-                        <label for="labParent">Parent (Lab Container Type):</label>
-                        <input type="text" id="labParent" placeholder="Enter parent (e.g., catalog)" 
-                               value="catalog" />
                         
                         <div id="recaptchaContainer" style="display: none; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
                             <strong>⚠ reCAPTCHA Required</strong>
@@ -85,8 +82,15 @@
                         </div>
                         
                         <div class="info-box" style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 13px;">
-                            <strong>Note:</strong> This calls Qwiklabs' API to start a lab and extract the temporary Google account credentials. 
-                            You need to be on a Qwiklabs page (skills.google.com or qwiklabs.com) for this to work.
+                            <strong>How to use:</strong>
+                            <ol style="margin: 8px 0 0 20px; padding: 0; font-size: 12px;">
+                                <li>Click "Generate Account" to create a temporary Google account</li>
+                                <li>If a captcha appears, complete it and try again</li>
+                                <li>The account credentials will be displayed once created</li>
+                            </ol>
+                            <p style="margin: 8px 0 0 0; font-size: 12px;">
+                                <strong>Note:</strong> This uses the "A Tour of Google Cloud Sustainability" lab (ID: 32138) which is the easiest to create accounts from.
+                            </p>
                         </div>
                     </div>
                     
