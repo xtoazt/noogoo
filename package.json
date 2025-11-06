@@ -4,6 +4,7 @@
   "description": "Auto Google Account Generator using WebVM",
   "scripts": {
     "build": "vite build",
+    "build:vercel": "cp index-vercel.html index.html && vite build && mv index.html index-vercel.html && (mv build/index.html build/index-vercel.html || true)",
     "dev": "vite",
     "preview": "vite preview"
   },

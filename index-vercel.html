@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Gmail Account Generator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <link rel="stylesheet" href="src/style.css" />
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Auto Gmail Account Generator</h1>
+            <p>Create Google accounts directly from your browser - Choose your method below</p>
+        </header>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="input-section">
+                    <div class="method-selector">
+                        <label>Generation Method:</label>
+                        <select id="methodSelect">
+                            <option value="gmailnator">Gmailnator API (Quick & Simple)</option>
+                            <option value="qwiklabs">Qwiklabs API (Temporary Google Accounts)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="gmailnatorFields">
+                        <label for="apiKey">RapidAPI Key:</label>
+                        <input type="text" id="apiKey" placeholder="Enter your RapidAPI key" 
+                               value="2c9338405dmsh74ec75e133afe3cp12eefcjsn066ab45de653" />
+                        
+                        <label for="setPassword">Set Password To:</label>
+                        <input type="text" id="setPassword" placeholder="Enter password to set" 
+                               value="SecurePass123!" />
+                        
+                        <label for="passwordChangeUrl">Password Change URL (optional):</label>
+                        <input type="text" id="passwordChangeUrl" 
+                               placeholder="URL to change password (e.g., https://accounts.google.com/..." />
+                        
+                        <div class="email-options">
+                            <label><input type="checkbox" value="1" checked> Public Domain</label>
+                            <label><input type="checkbox" value="2" checked> Public Plus(+) Gmail</label>
+                            <label><input type="checkbox" value="3" checked> Public Dot(.) Gmail</label>
+                            <label><input type="checkbox" value="4"> Private Domain</label>
+                            <label><input type="checkbox" value="5"> Private Plus(+) Gmail</label>
+                            <label><input type="checkbox" value="6"> Private Dot(.) Gmail</label>
+                        </div>
+                    </div>
+                    
+                    <div id="qwiklabsFields" style="display: none;">
+                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                            <strong>Using Lab:</strong>
+                            <div style="margin-top: 8px;">
+                                <div>Lab ID: <span style="font-weight: bold; color: #2e7d32;">32138</span></div>
+                                <div>Parent: <span style="font-weight: bold; color: #2e7d32;">catalog</span></div>
+                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                    A Tour of Google Cloud Sustainability
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="recaptchaContainer" style="display: none; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
+                            <strong>⚠ reCAPTCHA Required</strong>
+                            <p style="margin: 8px 0; font-size: 13px;">Please complete the reCAPTCHA below to continue:</p>
+                            <div id="recaptchaWidget"></div>
+                        </div>
+                        
+                        <div class="info-box" style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 13px;">
+                            <strong>How to use:</strong>
+                            <ol style="margin: 8px 0 0 20px; padding: 0; font-size: 12px;">
+                                <li>Click "Generate Account" to create a temporary Google account</li>
+                                <li>If a captcha appears, complete it and try again</li>
+                                <li>The account credentials will be displayed once created</li>
+                            </ol>
+                            <p style="margin: 8px 0 0 0; font-size: 12px;">
+                                <strong>Note:</strong> This uses the "A Tour of Google Cloud Sustainability" lab (ID: 32138) which is the easiest to create accounts from.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <button id="generateBtn" class="generate-btn">Generate Account</button>
+                    <button id="clearBtn" class="clear-btn">Clear Output</button>
+                </div>
+
+                <div class="output-section">
+                    <h3>Generated Account (JSON)</h3>
+                    <pre id="jsonOutput" class="json-output">No account generated yet...</pre>
+                </div>
+            </div>
+
+            <div class="terminal-section">
+                <h3>Terminal Output</h3>
+                <div id="terminal"></div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status">Ready</span>
+            <span id="vmStatus"></span>
+        </div>
+    </div>
+
+    <script type="module" src="src/main-vercel.js"></script>
+</body>
+</html>
+
