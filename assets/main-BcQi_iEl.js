@@ -278,6 +278,11 @@ async function generateAccount() {
         await generateAccountGmailnator();
         return;
     }
+    
+    if (method === 'qwiklabs') {
+        await generateAccountQwiklabs();
+        return;
+    }
 
     if (!vm) {
         alert('VM is not initialized yet. Please wait...');
@@ -621,22 +626,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Auto-detect lab runner ID from URL
+    function detectLabRunnerId() {
+        const url = window.location.href;
+        // Match /focuses/32138 or /focuses/32138?parent=catalog
+        const match = url.match(/\/focuses\/(\d+)/);
+        if (match) {
+            return match[1];
+        }
+        return null;
+    }
+    
+    // Update detected lab ID display
+    function updateDetectedLabId() {
+        const detectedId = detectLabRunnerId();
+        const detectedDisplay = document.getElementById('detectedLabId');
+        const labRunnerIdInput = document.getElementById('labRunnerId');
+        
+        if (detectedId) {
+            detectedDisplay.textContent = `Lab ID: ${detectedId}`;
+            detectedDisplay.style.color = '#2e7d32';
+            if (!labRunnerIdInput.value) {
+                labRunnerIdInput.value = detectedId;
+            }
+        } else {
+            detectedDisplay.textContent = 'Not detected - enter manually';
+            detectedDisplay.style.color = '#d32f2f';
+        }
+    }
+    
     // Handle method selection change
     document.getElementById('methodSelect').addEventListener('change', (e) => {
         const method = e.target.value;
         const webvmFields = document.getElementById('webvmFields');
         const gmailnatorFields = document.getElementById('gmailnatorFields');
+        const qwiklabsFields = document.getElementById('qwiklabsFields');
+        
+        // Hide all fields first
+        webvmFields.style.display = 'none';
+        gmailnatorFields.style.display = 'none';
+        qwiklabsFields.style.display = 'none';
         
         if (method === 'gmailnator') {
-            webvmFields.style.display = 'none';
             gmailnatorFields.style.display = 'block';
             if (terminal) {
                 terminal.writeln('\r\nSwitched to Gmailnator API mode');
                 terminal.writeln('No VM required - using API directly');
             }
+        } else if (method === 'qwiklabs') {
+            qwiklabsFields.style.display = 'block';
+            updateDetectedLabId(); // Auto-detect lab ID
+            if (terminal) {
+                terminal.writeln('\r\nSwitched to Qwiklabs API mode');
+                terminal.writeln('Will call Qwiklabs API to get temporary Google account');
+                const detectedId = detectLabRunnerId();
+                if (detectedId) {
+                    terminal.writeln(`Auto-detected Lab ID: ${detectedId}`);
+                }
+            }
         } else {
             webvmFields.style.display = 'block';
-            gmailnatorFields.style.display = 'none';
             if (terminal) {
                 terminal.writeln('\r\nSwitched to WebVM mode');
             }
@@ -646,6 +695,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // Auto-detect on page load if Qwiklabs method is selected
+    setTimeout(() => {
+        if (document.getElementById('methodSelect').value === 'qwiklabs') {
+            updateDetectedLabId();
+        }
+    }, 100);
 
     // Load saved API key
     const savedApiKey = localStorage.getItem('gmailnator_api_key');
@@ -863,6 +919,421 @@ async function generateAccountGmailnator() {
             status: 'failed',
             method: 'gmailnator_api',
             timestamp: new Date().toISOString()
+        });
+    } finally {
+        isGenerating = false;
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>Generate Account</span>';
+    }
+}
+
+// Qwiklabs API Functions
+let recaptchaWidgetId = null;
+let recaptchaV2Token = null;
+let recaptchaV3Token = null;
+
+// Load reCAPTCHA v2 if needed
+function loadRecaptchaV2(callback) {
+    if (typeof grecaptcha === 'undefined') {
+        terminal.writeln('Loading reCAPTCHA...');
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+        script.async = true;
+        script.defer = true;
+        window.onRecaptchaLoad = () => {
+            terminal.writeln('reCAPTCHA loaded');
+            if (callback) callback();
+        };
+        document.head.appendChild(script);
+    } else {
+        if (callback) callback();
+    }
+}
+
+// Get reCAPTCHA site key from page or use default
+function getRecaptchaSiteKey() {
+    // Try to find site key from existing reCAPTCHA widgets on the page
+    const existingWidgets = document.querySelectorAll('[data-sitekey]');
+    if (existingWidgets.length > 0) {
+        return existingWidgets[0].getAttribute('data-sitekey');
+    }
+    
+    // Try to find in script tags
+    const scripts = document.querySelectorAll('script[src*="recaptcha"]');
+    for (const script of scripts) {
+        const match = script.src.match(/[?&]render=([^&]+)/);
+        if (match && match[1] !== 'explicit') {
+            // This is a v3 site key
+            const siteKeyMatch = script.src.match(/[?&]k=([^&]+)/);
+            if (siteKeyMatch) {
+                return siteKeyMatch[1];
+            }
+        }
+    }
+    
+    // Try to find in window object (if Qwiklabs exposes it)
+    if (window.recaptchaSiteKey) {
+        return window.recaptchaSiteKey;
+    }
+    
+    // Default - will be detected dynamically or fail gracefully
+    return null;
+}
+
+// Execute reCAPTCHA v3
+async function executeRecaptchaV3() {
+    return new Promise((resolve, reject) => {
+        if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
+            reject(new Error('reCAPTCHA not loaded'));
+            return;
+        }
+        
+        const siteKey = getRecaptchaSiteKey();
+        if (!siteKey) {
+            // Try to use v3 with a common action, but it might fail
+            reject(new Error('reCAPTCHA site key not found'));
+            return;
+        }
+        
+        grecaptcha.ready(() => {
+            grecaptcha.execute(siteKey, { action: 'startLab' })
+                .then(token => {
+                    recaptchaV3Token = token;
+                    resolve(token);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    });
+}
+
+// Show reCAPTCHA v2 widget
+function showRecaptchaV2() {
+    const container = document.getElementById('recaptchaContainer');
+    const widget = document.getElementById('recaptchaWidget');
+    
+    container.style.display = 'block';
+    
+    loadRecaptchaV2(() => {
+        const siteKey = getRecaptchaSiteKey();
+        
+        if (!siteKey) {
+            terminal.writeln('⚠ reCAPTCHA site key not found - please complete captcha on the Qwiklabs page');
+            terminal.writeln('You may need to click "Start Lab" on the Qwiklabs page first');
+            container.innerHTML = `
+                <strong>⚠ reCAPTCHA Required</strong>
+                <p style="margin: 8px 0; font-size: 13px;">
+                    Please complete the reCAPTCHA on the Qwiklabs page (click "Start Lab" button) 
+                    and then try again, or complete the captcha that appears on the page.
+                </p>
+            `;
+            return;
+        }
+        
+        if (recaptchaWidgetId !== null) {
+            grecaptcha.reset(recaptchaWidgetId);
+        } else {
+            recaptchaWidgetId = grecaptcha.render(widget, {
+                'sitekey': siteKey,
+                'callback': (token) => {
+                    recaptchaV2Token = token;
+                    terminal.writeln('✓ reCAPTCHA completed');
+                    // Retry the API call
+                    generateAccountQwiklabs();
+                },
+                'expired-callback': () => {
+                    recaptchaV2Token = null;
+                    terminal.writeln('⚠ reCAPTCHA expired - please complete again');
+                }
+            });
+        }
+    });
+}
+
+async function generateAccountQwiklabs() {
+    if (isGenerating) {
+        return;
+    }
+
+    isGenerating = true;
+    const generateBtn = document.getElementById('generateBtn');
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span>Generating...</span>';
+    
+    // Auto-detect lab runner ID from URL if not provided
+    let labRunnerId = document.getElementById('labRunnerId').value.trim();
+    if (!labRunnerId) {
+        labRunnerId = detectLabRunnerId();
+        if (labRunnerId) {
+            document.getElementById('labRunnerId').value = labRunnerId;
+        }
+    }
+    
+    const labParent = document.getElementById('labParent').value.trim() || 'catalog';
+    
+    // Extract parent from URL if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlParent = urlParams.get('parent');
+    const finalParent = urlParent || labParent;
+    
+    if (!labRunnerId) {
+        alert('Please enter a Lab Runner ID (Focus ID) or navigate to a Qwiklabs lab page');
+        isGenerating = false;
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>Generate Account</span>';
+        return;
+    }
+
+    try {
+        updateStatus('Starting Qwiklabs lab...', 'Qwiklabs: Connecting');
+        terminal.writeln('\r\n═══════════════════════════════════════');
+        terminal.writeln('Qwiklabs API - Account Generation');
+        terminal.writeln('═══════════════════════════════════════');
+        terminal.writeln(`Step 1: Starting lab ${labRunnerId}...`);
+        
+        // Try to find and click "Start Lab" button if it exists (handles captcha automatically)
+        // Search for button by various selectors
+        let startLabButton = document.querySelector('button[data-testid="start-lab-button"]') ||
+                            document.querySelector('[class*="start-lab"]') ||
+                            document.querySelector('[id*="start-lab"]') ||
+                            Array.from(document.querySelectorAll('button, a')).find(el => 
+                                el.textContent && el.textContent.toLowerCase().includes('start lab')
+                            );
+        
+        if (startLabButton && startLabButton.offsetParent !== null) {
+            terminal.writeln('Found "Start Lab" button on page');
+            terminal.writeln('Note: If a captcha appears, please complete it on the Qwiklabs page');
+            
+            // Wait a bit then try clicking (but don't block)
+            setTimeout(() => {
+                try {
+                    startLabButton.click();
+                    terminal.writeln('✓ Attempted to click "Start Lab" button');
+                } catch (e) {
+                    terminal.writeln('⚠ Could not click button automatically');
+                }
+            }, 500);
+        } else {
+            terminal.writeln('ℹ "Start Lab" button not found - will call API directly');
+        }
+
+        // Build the API URL
+        // Check if we're on Qwiklabs domain, otherwise use full URL
+        const isQwiklabsDomain = window.location.hostname.includes('qwiklabs.com') || 
+                                  window.location.hostname.includes('skills.google');
+        const baseUrl = isQwiklabsDomain ? '' : 'https://www.qwiklabs.com';
+        
+        let apiUrl = `${baseUrl}/focuses/run/${labRunnerId}.json?parent=${encodeURIComponent(finalParent)}`;
+        
+        // Extract additional params from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('path')) {
+            apiUrl += `&path=${encodeURIComponent(urlParams.get('path'))}`;
+        }
+        if (urlParams.get('qlcampaign')) {
+            apiUrl += `&qlcampaign=${encodeURIComponent(urlParams.get('qlcampaign'))}`;
+        }
+        
+        terminal.writeln(`API URL: ${apiUrl}`);
+        terminal.writeln(`Domain: ${window.location.hostname}`);
+        if (!isQwiklabsDomain) {
+            terminal.writeln('⚠ Warning: Not on Qwiklabs domain - CORS may block this request');
+            terminal.writeln('This will only work from Qwiklabs pages or with CORS enabled');
+        }
+        
+        // Step 2: Try to get reCAPTCHA v3 token (non-blocking)
+        terminal.writeln('Step 2: Checking for reCAPTCHA...');
+        try {
+            recaptchaV3Token = await executeRecaptchaV3();
+            terminal.writeln('✓ reCAPTCHA v3 token obtained');
+        } catch (error) {
+            terminal.writeln('⚠ reCAPTCHA v3 not available or failed (will try without it)');
+        }
+        
+        // Add reCAPTCHA tokens to URL if available
+        if (recaptchaV3Token) {
+            apiUrl += `&recaptchaV3Token=${encodeURIComponent(recaptchaV3Token)}`;
+        }
+        if (recaptchaV2Token) {
+            apiUrl += `&recaptchaV2Token=${encodeURIComponent(recaptchaV2Token)}`;
+        }
+        
+        terminal.writeln('Step 3: Calling Qwiklabs API...');
+
+        // Call Qwiklabs API
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            credentials: 'include', // Include cookies for authentication
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            
+            // Check if reCAPTCHA is required
+            if (response.status === 403 || errorText.includes('recaptcha') || errorText.includes('captcha')) {
+                terminal.writeln('⚠ reCAPTCHA required - please complete the captcha');
+                isGenerating = false;
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>Generate Account</span>';
+                showRecaptchaV2();
+                return;
+            }
+            
+            throw new Error(`API Error: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
+        }
+
+        const data = await response.json();
+        terminal.writeln('✓ Lab started successfully');
+        
+        // Hide reCAPTCHA if it was shown
+        document.getElementById('recaptchaContainer').style.display = 'none';
+        recaptchaV2Token = null; // Reset after successful call
+        
+        terminal.writeln('Step 4: Extracting credentials from response...');
+
+        // Extract credentials from labDetails
+        const labDetails = data.labDetails || data.lab_details || data.labDetails || [];
+        const credentials = [];
+        
+        // Helper function to extract credential from various structures
+        const extractCredential = (obj, source = 'unknown') => {
+            // Try multiple possible structures
+            const cred = {
+                source: source,
+                type: obj.type || 'credential',
+                label: obj.label || obj.name || obj.title || 'Credential',
+                username: obj.username || obj.user || obj.userName || 
+                          obj.connectionDetails?.username || obj.connectionDetails?.user,
+                password: obj.password || obj.pass || obj.pwd || 
+                         obj.connectionDetails?.password || obj.connectionDetails?.pass,
+                email: obj.email || obj.emailAddress || obj.userEmail ||
+                       obj.connectionDetails?.email || obj.connectionDetails?.emailAddress,
+                projectId: obj.projectId || obj.project_id || obj.projectID,
+                region: obj.region,
+                zone: obj.zone,
+                raw: obj
+            };
+            
+            // Also check nested user_0 structure
+            if (obj.user_0) {
+                cred.username = cred.username || obj.user_0.username || obj.user_0.email;
+                cred.password = cred.password || obj.user_0.password;
+                cred.email = cred.email || obj.user_0.email || obj.user_0.username;
+            }
+            
+            return cred;
+        };
+        
+        // Look for credential objects in labDetails
+        for (const detail of labDetails) {
+            if (detail.type === 'credential' || detail.type === 'connectionDetails' || detail.connectionDetails) {
+                const credential = extractCredential(detail, 'labDetails');
+                if (credential.username || credential.email || credential.password) {
+                    credentials.push(credential);
+                }
+            }
+        }
+        
+        // Check for connectionDetails array directly
+        if (data.connectionDetails && Array.isArray(data.connectionDetails)) {
+            for (const conn of data.connectionDetails) {
+                const credential = extractCredential(conn, 'connectionDetails');
+                if (credential.username || credential.email || credential.password) {
+                    credentials.push(credential);
+                }
+            }
+        }
+        
+        // Also check for user_0 in the response directly
+        if (data.user_0) {
+            const userCred = extractCredential(data.user_0, 'user_0');
+            if (userCred.username || userCred.email || userCred.password) {
+                credentials.push(userCred);
+            }
+        }
+        
+        // Check for project_0
+        if (data.project_0) {
+            credentials.push({
+                type: 'project',
+                label: 'Project',
+                projectId: data.project_0.project_id || data.project_0.projectId,
+                raw: data.project_0,
+                source: 'project_0'
+            });
+        }
+        
+        // Check for users array
+        if (data.users && Array.isArray(data.users)) {
+            for (const user of data.users) {
+                const credential = extractCredential(user, 'users');
+                if (credential.username || credential.email || credential.password) {
+                    credentials.push(credential);
+                }
+            }
+        }
+
+        if (credentials.length === 0) {
+            terminal.writeln('⚠ No credentials found in response');
+            terminal.writeln('Response structure:');
+            terminal.writeln(JSON.stringify(data, null, 2).substring(0, 1000));
+            
+            displayAccount({
+                error: 'No credentials found in Qwiklabs response',
+                status: 'failed',
+                method: 'qwiklabs_api',
+                response: data,
+                timestamp: new Date().toISOString(),
+                note: 'Check terminal output for full response structure'
+            });
+        } else {
+            terminal.writeln(`✓ Found ${credentials.length} credential(s)`);
+            
+            // Extract the first credential with username/password
+            const mainCredential = credentials.find(c => c.username || c.email) || credentials[0];
+            
+            const accountResult = {
+                email: mainCredential.email || mainCredential.username,
+                username: mainCredential.username || mainCredential.email,
+                password: mainCredential.password,
+                projectId: mainCredential.projectId,
+                region: mainCredential.region,
+                zone: mainCredential.zone,
+                status: 'generated',
+                method: 'qwiklabs_api',
+                labRunnerId: labRunnerId,
+                labInstanceId: data.labInstanceId || data.lab_instance_id,
+                allCredentials: credentials,
+                timestamp: new Date().toISOString(),
+                note: 'Account generated via Qwiklabs API. Credentials are temporary and will expire when lab ends.'
+            };
+            
+            displayAccount(accountResult);
+            updateStatus('Account generated successfully!', 'Qwiklabs: Complete');
+            terminal.writeln(`\r\n✓ Email/Username: ${accountResult.email || accountResult.username}`);
+            terminal.writeln(`✓ Password: ${accountResult.password || 'Not found'}`);
+            if (accountResult.projectId) {
+                terminal.writeln(`✓ Project ID: ${accountResult.projectId}`);
+            }
+            terminal.writeln('✓ Account details displayed above');
+        }
+
+    } catch (error) {
+        console.error('Error generating account via Qwiklabs:', error);
+        terminal.writeln(`\r\n✗ Error: ${error.message}`);
+        updateStatus('Error: ' + error.message, 'Qwiklabs: Error');
+        
+        displayAccount({
+            error: error.message,
+            status: 'failed',
+            method: 'qwiklabs_api',
+            timestamp: new Date().toISOString(),
+            note: 'Make sure you are on a Qwiklabs page and have proper authentication. The API requires cookies/session from Qwiklabs.'
         });
     } finally {
         isGenerating = false;

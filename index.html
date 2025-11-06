@@ -6,6 +6,7 @@
     <title>Auto Gmail Account Generator</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <script src="https://unpkg.com/@cheerpx/webvm@latest/dist/webvm.js" type="module"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script type="module" crossorigin src="/assets/index-B7NyUTrP.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-BTFUHHqC.css">
 </head>
@@ -24,6 +25,7 @@
                         <select id="methodSelect">
                             <option value="webvm">WebVM (Full Account Creation)</option>
                             <option value="gmailnator">Gmailnator API (Quick & Simple)</option>
+                            <option value="qwiklabs">Qwiklabs API (Temporary Google Accounts)</option>
                         </select>
                     </div>
                     
@@ -58,6 +60,33 @@
                             <label><input type="checkbox" value="4"> Private Domain</label>
                             <label><input type="checkbox" value="5"> Private Plus(+) Gmail</label>
                             <label><input type="checkbox" value="6"> Private Dot(.) Gmail</label>
+                        </div>
+                    </div>
+                    
+                    <div id="qwiklabsFields" style="display: none;">
+                        <div id="qwiklabsAutoDetect" style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                            <strong>Auto-detected from URL:</strong>
+                            <div style="margin-top: 8px;">
+                                <span id="detectedLabId" style="font-weight: bold; color: #2e7d32;">Not detected</span>
+                            </div>
+                        </div>
+                        
+                        <label for="labRunnerId">Lab Runner ID (Focus ID):</label>
+                        <input type="text" id="labRunnerId" placeholder="Auto-detected from URL or enter manually" />
+                        
+                        <label for="labParent">Parent (Lab Container Type):</label>
+                        <input type="text" id="labParent" placeholder="Enter parent (e.g., catalog)" 
+                               value="catalog" />
+                        
+                        <div id="recaptchaContainer" style="display: none; margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
+                            <strong>⚠ reCAPTCHA Required</strong>
+                            <p style="margin: 8px 0; font-size: 13px;">Please complete the reCAPTCHA below to continue:</p>
+                            <div id="recaptchaWidget"></div>
+                        </div>
+                        
+                        <div class="info-box" style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 13px;">
+                            <strong>Note:</strong> This calls Qwiklabs' API to start a lab and extract the temporary Google account credentials. 
+                            You need to be on a Qwiklabs page (skills.google.com or qwiklabs.com) for this to work.
                         </div>
                     </div>
                     
